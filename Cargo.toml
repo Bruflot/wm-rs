@@ -1,0 +1,9 @@
+[package]
+name = "wm"
+version = "0.1.0"
+authors = ["Bruflot <idar@bruflot.io>"]
+build = "build.rs"
+
+[dependencies]
+xlib = { path = "xlib" }
+x11 = "*"

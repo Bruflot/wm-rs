@@ -1,0 +1,7 @@
+[package]
+name = "xlib"
+version = "0.1.0"
+authors = ["idar"]
+
+[dependencies]
+x11 = "*"

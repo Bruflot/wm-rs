@@ -1,7 +1,0 @@
-[package]
-name = "xlib"
-version = "0.1.0"
-authors = ["Bruflot <idar@bruflot.io>"]
-
-[dependencies]
-x11 = "*"

@@ -1,1 +1,0 @@
-A barebones wrapper for xlib. Only supports a single display connection.

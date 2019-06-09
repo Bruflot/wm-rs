@@ -1,9 +1,8 @@
 [package]
-name = "wm"
+name = "wm-rs"
 version = "0.1.0"
-authors = ["Bruflot <idar@bruflot.io>"]
-build = "build.rs"
+authors = ["Bruflot <git@bruflot.com>"]
+edition = "2018"
 
 [dependencies]
-xlib = { path = "xlib" }
 x11 = "*"

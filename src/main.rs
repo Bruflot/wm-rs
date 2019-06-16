@@ -1,6 +1,5 @@
-mod xlib;
 use std::io;
 
-fn main() -> io::Result<()> {
-    Ok(())
+fn main() -> io::Result<()>{
+	Ok(())
 }

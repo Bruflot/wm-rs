@@ -4,7 +4,7 @@ use std::ffi::CString;
 use std::ptr;
 use x11::xlib;
 
-pub type XDisplay = *mut xlib::Display;
+type XDisplay = *mut xlib::Display;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Display {
@@ -14,6 +14,7 @@ pub struct Display {
 impl Display {
     // XOpenDisplay -- should be nullable.
     pub fn connect<T: AsRef<str>>(display_name: Option<T>) -> Result<Display, XError> {
+    // pub fn connect(display_name: Option<&str>) -> Result<Display, XError> {
         let display_name = match display_name {
             Some(name) => CString::new(name.as_ref()).unwrap().as_ptr(),
             None => ptr::null(),
@@ -26,9 +27,6 @@ impl Display {
 
         Ok(Self { display })
     }
-
-    // XDefaultScreenOfDisplay
-    pub fn default_screen(&self) {}
 
     // XDefaultRootWindow
     pub fn default_window(&self) -> Window {

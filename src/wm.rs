@@ -18,10 +18,4 @@ impl WM {
         self.display.map_window(&win);
         self.display.sync(false);
     }
-
-    pub fn scale_window(&self, window: Window, bounds: Rect) {
-        let width = self.display.get_width() / 2;
-        window.move_resize(bounds);
-        self.display.sync(false);
-    }
 }

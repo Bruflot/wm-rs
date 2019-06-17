@@ -2,8 +2,8 @@ use crate::display::Display;
 use crate::Rect;
 use x11::xlib;
 
-pub type XDisplay = *mut xlib::Display;
-pub type XWindow = xlib::Window;
+type XDisplay = *mut xlib::Display;
+type XWindow = xlib::Window;
 
 #[derive(Debug)]
 pub struct Window {

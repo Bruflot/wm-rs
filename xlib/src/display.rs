@@ -47,21 +47,13 @@ impl Display {
     }
 
     // XMapWindow
-    pub fn map_window(&self, window: &Window) -> XResult<()> {
-        let ret = unsafe { xlib::XMapWindow(self.inner, window.inner) };
-        if ret == xlib::BadWindow as i32 {
-            return Err(XError::BadWindow);
-        }
-        Ok(())
+    pub fn map_window(&self, window: &Window){
+        unsafe { xlib::XMapWindow(self.inner, window.inner); }
     }
 
     // XSelectInput
-    pub fn select_input(&self, window: &Window, event_mask: EventMask) -> XResult<()> {
-        let ret = unsafe { xlib::XSelectInput(self.inner, window.inner, event_mask as i64) };
-        if ret == xlib::BadWindow as i32 {
-            return Err(XError::BadWindow);
-        }
-        Ok(())
+    pub fn select_input(&self, window: &Window, event_mask: EventMask){
+        unsafe { xlib::XSelectInput(self.inner, window.inner, event_mask as i64); }
     }
 
     pub fn next_event(&self) -> Event {

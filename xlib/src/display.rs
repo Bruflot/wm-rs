@@ -47,13 +47,17 @@ impl Display {
     }
 
     // XMapWindow
-    pub fn map_window(&self, window: &Window){
-        unsafe { xlib::XMapWindow(self.inner, window.inner); }
+    pub fn map_window(&self, window: &Window) {
+        unsafe {
+            xlib::XMapWindow(self.inner, window.inner);
+        }
     }
 
     // XSelectInput
-    pub fn select_input(&self, window: &Window, event_mask: EventMask){
-        unsafe { xlib::XSelectInput(self.inner, window.inner, event_mask as i64); }
+    pub fn select_input(&self, window: &Window, event_mask: EventMask) {
+        unsafe {
+            xlib::XSelectInput(self.inner, window.inner, event_mask as i64);
+        }
     }
 
     pub fn next_event(&self) -> Event {

@@ -2,12 +2,14 @@ extern crate x11;
 
 mod display;
 mod errors;
+mod events;
 mod window;
 
 pub use display::Display;
 pub use errors::XError;
+pub use events::{EventMask, Events};
 pub use window::Window;
-pub type Result<T> = std::result::Result<T, XError>;
+pub type XResult<T> = std::result::Result<T, XError>;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Rect {

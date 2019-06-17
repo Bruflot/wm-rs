@@ -1,5 +1,5 @@
 use crate::display::Display;
-use crate::Rect;
+use crate::{Rect, XResult};
 use x11::xlib;
 
 type XDisplay = *mut xlib::Display;
@@ -15,7 +15,7 @@ impl Window {
     pub fn new(display: &Display, bounds: Rect) -> Self {
         let window = unsafe {
             xlib::XCreateSimpleWindow(
-                display.display,
+                display.inner,
                 display.default_window().inner,
                 bounds.x,
                 bounds.y,
@@ -28,12 +28,11 @@ impl Window {
         };
 
         Self {
-            display: display.display,
+            display: display.inner,
             inner: window,
         }
     }
 
-    // TODO: errors
     pub fn move_resize(&self, bounds: Rect) {
         unsafe {
             xlib::XMoveResizeWindow(

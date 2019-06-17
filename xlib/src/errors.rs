@@ -1,5 +1,8 @@
 #[derive(Debug)]
 pub enum XError {
-    OpenDisplayError,
+    BadAlloc,
+    BadMatch,
+    BadValue,
     BadWindow,
+    OpenDisplayError,
 }

@@ -11,5 +11,9 @@ fn main() {
         height: 200,
     });
 
-    loop {}
+    loop {
+        match wm.next_event() {
+            _ => (),
+        }
+    }
 }

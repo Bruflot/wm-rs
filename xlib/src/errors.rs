@@ -4,5 +4,5 @@ pub enum XError {
     BadMatch,
     BadValue,
     BadWindow,
-    OpenDisplayError,
+    ConnectionError,
 }

@@ -1,12 +1,10 @@
-use crate::errors::XError;
-use crate::events::EventMask;
-use crate::window::Window;
-use crate::XResult;
+extern crate libc;
+use crate::events::{Event, EventMask};
+use crate::{Window, XDisplay, XError, XResult};
 use std::ffi::CString;
+use std::mem;
 use std::ptr;
 use x11::xlib;
-
-type XDisplay = *mut xlib::Display;
 
 #[derive(Debug)]
 pub struct Display {
@@ -15,17 +13,16 @@ pub struct Display {
 
 impl Display {
     // XOpenDisplay
-    pub fn connect<T: AsRef<str>>(display_name: Option<T>) -> XResult<Display> {
+    pub fn connect(display_name: Option<&str>) -> XResult<Display> {
         let display_name = match display_name {
-            Some(name) => CString::new(name.as_ref()).unwrap().as_ptr(),
+            Some(name) => CString::new(name).unwrap().as_ptr(),
             None => ptr::null(),
         };
         let display = unsafe { xlib::XOpenDisplay(display_name) };
 
-        if display == ptr::null_mut() {
-            return Err(XError::OpenDisplayError);
+        if display.is_null() {
+            return Err(XError::ConnectionError);
         }
-
         Ok(Self { inner: display })
     }
 
@@ -56,10 +53,15 @@ impl Display {
         }
     }
 
-    // pub fn next_event(&self) -> Event {
-    //     let event: *mut xlib::XAnyEvent = unsafe { std::mem::zeroed() };
-    //     Event::from_raw(event)
-    // }
+    // XNextEvent
+    pub fn next_event(&self) -> Event {
+        let event = unsafe {
+            let e = libc::malloc(mem::size_of::<xlib::XEvent>()) as *mut xlib::XEvent;
+            xlib::XNextEvent(self.inner, e);
+            e
+        };
+        Event::from_raw(event)
+    }
 
     // XDisplayWidth
     pub fn get_width(&self) -> i32 {

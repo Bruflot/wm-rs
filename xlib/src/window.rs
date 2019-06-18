@@ -1,9 +1,5 @@
-use crate::display::Display;
-use crate::Rect;
+use crate::{Display, Rect, XDisplay, XWindow};
 use x11::xlib;
-
-type XDisplay = *mut xlib::Display;
-type XWindow = xlib::Window;
 
 #[derive(Debug)]
 pub struct Window {
@@ -21,7 +17,7 @@ impl Window {
                 bounds.y,
                 bounds.width,
                 bounds.height,
-                0,        // border
+                0,        // border width
                 0,        // border color
                 16777215, // bg color (256^3-1 = white)
             )
@@ -40,6 +36,10 @@ impl Window {
         }
     }
 
+    pub fn as_raw(&self) -> XWindow {
+        self.inner
+    }
+
     pub fn move_resize(&self, bounds: Rect) {
         unsafe {
             xlib::XMoveResizeWindow(
@@ -51,9 +51,5 @@ impl Window {
                 bounds.height,
             );
         }
-    }
-
-    pub fn as_raw(&self) -> XWindow {
-        self.inner
     }
 }

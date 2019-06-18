@@ -7,7 +7,6 @@ mod window;
 
 pub use display::Display;
 pub use errors::XError;
-pub use events::{EventMask, Events};
 pub use window::Window;
 pub type XResult<T> = std::result::Result<T, XError>;
 

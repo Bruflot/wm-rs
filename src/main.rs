@@ -1,5 +1,4 @@
 mod wm;
-use std::thread;
 use wm::{Rect, WM};
 
 fn main() {
@@ -11,9 +10,5 @@ fn main() {
         height: 200,
     });
 
-    loop {
-        match wm.next_event() {
-            _ => (),
-        }
-    }
+    loop {}
 }

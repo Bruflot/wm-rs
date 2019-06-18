@@ -19,7 +19,7 @@ impl WM {
         self.display.sync(false);
     }
 
-    pub fn next_event(&mut self) {
-        // self.display.
-    }
+    // pub fn next_event(&mut self) -> Event{
+    // self.display.next_event()
+    // }
 }

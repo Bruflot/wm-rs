@@ -1,5 +1,5 @@
 use crate::display::Display;
-use crate::{Rect, XResult};
+use crate::Rect;
 use x11::xlib;
 
 type XDisplay = *mut xlib::Display;
@@ -7,15 +7,15 @@ type XWindow = xlib::Window;
 
 #[derive(Debug)]
 pub struct Window {
-    pub(crate) display: XDisplay,
-    pub(crate) inner: XWindow,
+    display: XDisplay,
+    inner: XWindow,
 }
 
 impl Window {
     pub fn new(display: &Display, bounds: Rect) -> Self {
         let window = unsafe {
             xlib::XCreateSimpleWindow(
-                display.inner,
+                display.as_raw(),
                 display.default_window().inner,
                 bounds.x,
                 bounds.y,
@@ -28,7 +28,14 @@ impl Window {
         };
 
         Self {
-            display: display.inner,
+            display: display.as_raw(),
+            inner: window,
+        }
+    }
+
+    pub fn from_raw(display: &Display, window: XWindow) -> Self {
+        Self {
+            display: display.as_raw(),
             inner: window,
         }
     }
@@ -44,5 +51,9 @@ impl Window {
                 bounds.height,
             );
         }
+    }
+
+    pub fn as_raw(&self) -> XWindow {
+        self.inner
     }
 }

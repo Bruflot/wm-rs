@@ -1,5 +1,5 @@
 use crate::errors::XError;
-use crate::events::{Event, EventMask};
+use crate::events::EventMask;
 use crate::window::Window;
 use crate::XResult;
 use std::ffi::CString;
@@ -10,13 +10,12 @@ type XDisplay = *mut xlib::Display;
 
 #[derive(Debug)]
 pub struct Display {
-    pub(crate) inner: XDisplay,
+    inner: XDisplay,
 }
 
 impl Display {
-    // XOpenDisplay -- should be nullable.
+    // XOpenDisplay
     pub fn connect<T: AsRef<str>>(display_name: Option<T>) -> XResult<Display> {
-        // pub fn connect(display_name: Option<&str>) -> Result<Display, XError> {
         let display_name = match display_name {
             Some(name) => CString::new(name.as_ref()).unwrap().as_ptr(),
             None => ptr::null(),
@@ -33,10 +32,7 @@ impl Display {
     // XDefaultRootWindow
     pub fn default_window(&self) -> Window {
         let window = unsafe { xlib::XDefaultRootWindow(self.inner) };
-        Window {
-            display: self.inner,
-            inner: window,
-        }
+        Window::from_raw(self, window)
     }
 
     // XSync
@@ -49,31 +45,34 @@ impl Display {
     // XMapWindow
     pub fn map_window(&self, window: &Window) {
         unsafe {
-            xlib::XMapWindow(self.inner, window.inner);
+            xlib::XMapWindow(self.inner, window.as_raw());
         }
     }
 
     // XSelectInput
     pub fn select_input(&self, window: &Window, event_mask: EventMask) {
         unsafe {
-            xlib::XSelectInput(self.inner, window.inner, event_mask as i64);
+            xlib::XSelectInput(self.inner, window.as_raw(), event_mask as i64);
         }
     }
 
-    pub fn next_event(&self) -> Event {
-        let event =
-            unsafe { libc::malloc(std::mem::size_of::<xlib::XAnyEvent>()) as *mut xlib::XAnyEvent };
-        Event::from_raw(event)
-    }
+    // pub fn next_event(&self) -> Event {
+    //     let event: *mut xlib::XAnyEvent = unsafe { std::mem::zeroed() };
+    //     Event::from_raw(event)
+    // }
 
     // XDisplayWidth
-    pub fn get_width(&self) -> u32 {
-        unsafe { xlib::XDisplayWidth(self.inner, 0) as u32 }
+    pub fn get_width(&self) -> i32 {
+        unsafe { xlib::XDisplayWidth(self.inner, 0) }
     }
 
     // XDisplayHeight
-    pub fn get_height(&self) -> u32 {
-        unsafe { xlib::XDisplayHeight(self.inner, 0) as u32 }
+    pub fn get_height(&self) -> i32 {
+        unsafe { xlib::XDisplayHeight(self.inner, 0) }
+    }
+
+    pub fn as_raw(&self) -> XDisplay {
+        self.inner
     }
 }
 

@@ -1,6 +1,5 @@
 extern crate libc;
-use crate::events::{Event, EventMask};
-use crate::{Window, XDisplay, XError, XResult};
+use crate::{Event, EventMask, Window, XDisplay, XError, XEvent, XResult};
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
@@ -47,20 +46,19 @@ impl Display {
     }
 
     // XSelectInput
-    pub fn select_input(&self, window: &Window, event_mask: EventMask) {
+    pub fn select_input<T: Into<i64>>(&self, window: &Window, event_mask: T) {
         unsafe {
-            xlib::XSelectInput(self.inner, window.as_raw(), event_mask as i64);
+            xlib::XSelectInput(self.inner, window.as_raw(), event_mask.into());
         }
     }
 
     // XNextEvent
     pub fn next_event(&self) -> Event {
-        let event = unsafe {
-            let e = libc::malloc(mem::size_of::<xlib::XEvent>()) as *mut xlib::XEvent;
-            xlib::XNextEvent(self.inner, e);
-            e
-        };
-        Event::from_raw(event)
+        unsafe {
+            let event = libc::malloc(mem::size_of::<xlib::XEvent>()) as XEvent;
+            xlib::XNextEvent(self.inner, event);
+            Event::from_raw(event)
+        }
     }
 
     // XDisplayWidth

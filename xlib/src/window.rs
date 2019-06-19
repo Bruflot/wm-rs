@@ -53,3 +53,12 @@ impl Window {
         }
     }
 }
+
+impl Drop for Window {
+    fn drop(&mut self) {
+        // Destroys (and unmaps) the window
+        unsafe {
+            xlib::XDestroyWindow(self.display, self.inner);
+        }
+    }
+}

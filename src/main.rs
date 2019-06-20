@@ -3,7 +3,7 @@ extern crate log;
 extern crate pretty_env_logger;
 
 mod wm;
-use wm::{Events, Rect, WM};
+use wm::WM;
 
 fn main() {
     pretty_env_logger::init();
@@ -13,3 +13,5 @@ fn main() {
 
     wm.run();
 }
+
+

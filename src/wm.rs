@@ -4,33 +4,25 @@ use xlib::{Display, Event, EventMask, Window, XResult};
 
 pub struct WM {
     display: Display,
-    root: Window,
+    windows: Vec<Window>
 }
 
 impl WM {
     pub fn new() -> XResult<Self> {
-        // Connect to the default display of X
         let display = Display::connect(None)?;
-        // Get the root window of the display
         let root = display.default_window();
-        // Register that we want to receive certain events related to the root window
         display.select_input(
             &root,
             EventMask::SubstructureNotifyMask | EventMask::SubstructureRedirectMask,
         );
 
-        Ok(Self { display, root })
+        Ok(Self { 
+            display, 
+            windows: Vec::new() 
+        })
     }
 
-    pub fn create_window(&mut self, bounds: Rect) {
-        let win = Window::new(&self.display, bounds);
-        // Map the window to the display
-        self.display.map_window(&win);
-        // Synchronize the server without discarding pending events
-        self.display.sync(false);
-    }
-
-    pub fn map_window(&self, window: &Window) {
+    pub fn map_request(&self, window: &Window) {
         self.display.map_window(&window);
     }
 
@@ -41,10 +33,17 @@ impl WM {
     pub fn run(&mut self) {
         loop {
             let event = self.next_event();
-            let kind = event.kind();
+            let kind = event.get_kind();
             info!("Event received: {:?}", kind);
 
-            match kind{
+            match kind {
+                Events::MapRequest => {
+                    let event_window = event.get_map_event().window;
+                    let window = Window::from_raw(&self.display, event_window);
+                    self.map_request(&window);
+                    info!("Mapped window {}", window.as_raw());
+                    self.windows.push(window);
+                },
                 _ => warn!("Event ignored"),
             }
         }

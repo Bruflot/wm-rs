@@ -1,5 +1,5 @@
 extern crate libc;
-use crate::{Event, EventMask, Window, XDisplay, XError, XEvent, XResult};
+use crate::{Event, Window, XDisplay, XError, XEvent, XResult};
 use std::ffi::CString;
 use std::mem;
 use std::ptr;
@@ -35,6 +35,13 @@ impl Display {
     pub fn sync<T: Into<i32>>(&self, discard: T) {
         unsafe {
             xlib::XSync(self.inner, discard.into());
+        }
+    }
+
+    // XReparentWindow
+    pub fn reparent_window(&self, window: &Window, parent: &Window){
+        unsafe{
+            xlib::XReparentWindow(self.inner, window.as_raw(), parent.as_raw(), 0, 0);
         }
     }
 

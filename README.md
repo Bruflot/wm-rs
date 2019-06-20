@@ -3,7 +3,8 @@
 wip
 
 ## Features
-- [ ] Basic functionality (connect to X, open windows)
+- [x] Basic functionality (connect to X, open windows)
+- [ ] Resize windows
 - [ ] Multiple screens
 - [ ] Custom modes (e.g. tiling/floating) through scripting?
 - [ ] Handling keybinds

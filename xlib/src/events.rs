@@ -1,7 +1,7 @@
 extern crate libc;
 extern crate x11;
 
-use crate::{XDisplay, XEvent, XWindow};
+use crate::{XDisplay, XEvent};
 use std::ops::BitOr;
 use x11::xlib;
 
@@ -20,17 +20,33 @@ pub enum Events {
 
 pub struct Event {
     inner: XEvent,
+    kind: Events,
     display: XDisplay,
-    window: XWindow,
+}
+
+fn get_kind(event: i32) -> Events{
+    match event{
+        16 => Events::CreateNotify,
+        17 => Events::DestroyNotify,
+        18 => Events::UnmapNotify,
+        19 => Events::MapNotify,
+        20 => Events::MapRequest,
+        21 => Events::ReparentNotify,
+        22 => Events::ConfigureNotify,
+        23 => Events::ConfigureRequest,
+        _ => Events::Other,
+    }
 }
 
 impl Event {
     pub fn from_raw(event: XEvent) -> Self{
         let fields = unsafe { event.as_ref().unwrap().any };
+        let kind = unsafe { event.as_ref().unwrap().get_type() };
+
         Self{
             inner: event,
+            kind: get_kind(kind),
             display: fields.display,
-            window: fields.window,
         }
     }
 
@@ -38,23 +54,16 @@ impl Event {
         self.inner
     }
 
-    pub fn kind(&self) -> Events {
-        let kind = unsafe { self.inner.as_ref().unwrap().get_type() };
-        match kind {
-            16 => Events::CreateNotify,
-            17 => Events::DestroyNotify,
-            18 => Events::UnmapNotify,
-            19 => Events::MapNotify,
-            20 => Events::MapRequest,
-            21 => Events::ReparentNotify,
-            22 => Events::ConfigureNotify,
-            23 => Events::ConfigureRequest,
-            _ => Events::Other,
-        }
+    pub fn get_kind(&self) -> &Events {
+        &self.kind
     }
 
-    pub fn get_window(&self) -> XWindow{
-        self.window
+    pub fn get_display(&self) -> XDisplay{
+        self.display
+    }
+
+    pub fn get_map_event(&self) -> xlib::XMapRequestEvent{
+        unsafe { self.inner.as_ref().unwrap().map_request }   
     }
 }
 

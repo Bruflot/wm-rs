@@ -1,5 +1,8 @@
 # wm-rs
 
+[![](https://tokei.rs/b1/github/bruflot/wm-rs)](https://tokei.rs/b1/github/bruflot/wm-rs)
+
+a highly customizable, minimal x11 window manager  
 wip
 
 ## Features

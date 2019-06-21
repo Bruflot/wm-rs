@@ -39,8 +39,8 @@ impl Display {
     }
 
     // XReparentWindow
-    pub fn reparent_window(&self, window: &Window, parent: &Window){
-        unsafe{
+    pub fn reparent_window(&self, window: &Window, parent: &Window) {
+        unsafe {
             xlib::XReparentWindow(self.inner, window.as_raw(), parent.as_raw(), 0, 0);
         }
     }
@@ -52,10 +52,16 @@ impl Display {
         }
     }
 
-    // XSelectInput
-    pub fn select_input<T: Into<i64>>(&self, window: &Window, event_mask: T) {
+    pub fn unmap_window(&self, window: &Window) {
         unsafe {
-            xlib::XSelectInput(self.inner, window.as_raw(), event_mask.into());
+            xlib::XUnmapWindow(self.inner, window.as_raw());
+        }
+    }
+
+    // XSelectInput
+    pub fn select_input(&self, window: &Window, event_mask: i64) {
+        unsafe {
+            xlib::XSelectInput(self.inner, window.as_raw(), event_mask);
         }
     }
 
@@ -66,16 +72,6 @@ impl Display {
             xlib::XNextEvent(self.inner, event);
             Event::from_raw(event)
         }
-    }
-
-    // XDisplayWidth
-    pub fn get_width(&self) -> i32 {
-        unsafe { xlib::XDisplayWidth(self.inner, 0) }
-    }
-
-    // XDisplayHeight
-    pub fn get_height(&self) -> i32 {
-        unsafe { xlib::XDisplayHeight(self.inner, 0) }
     }
 
     pub fn as_raw(&self) -> XDisplay {

@@ -1,10 +1,12 @@
-pub use xlib::Events;
+use std::collections::HashMap;
+pub use xlib::EventKind;
 pub use xlib::Rect;
-use xlib::{Display, Event, EventMask, Window, XResult};
+use xlib::{Display, Event, Window, XResult};
 
 pub struct WM {
     display: Display,
-    windows: Vec<Window>
+    root: Window,
+    windows: HashMap<u64, Window>,
 }
 
 impl WM {
@@ -13,12 +15,15 @@ impl WM {
         let root = display.default_window();
         display.select_input(
             &root,
-            EventMask::SubstructureNotifyMask | EventMask::SubstructureRedirectMask,
+            xlib::SUBSTRUCTURE_NOTIFY_MASK
+                | xlib::SUBSTRUCTURE_REDIRECT_MASK
+                | xlib::STRUCTURE_NOTIFY_MASK,
         );
 
-        Ok(Self { 
-            display, 
-            windows: Vec::new() 
+        Ok(Self {
+            display,
+            root,
+            windows: HashMap::new(),
         })
     }
 
@@ -30,6 +35,11 @@ impl WM {
         self.display.next_event()
     }
 
+    pub fn resize_window(&mut self, window: u64, bounds: Rect) {
+        let win = self.windows.get_mut(&window).unwrap();
+        win.move_resize(bounds);
+    }
+
     pub fn run(&mut self) {
         loop {
             let event = self.next_event();
@@ -37,14 +47,27 @@ impl WM {
             info!("Event received: {:?}", kind);
 
             match kind {
-                Events::MapRequest => {
-                    let event_window = event.get_map_event().window;
-                    let window = Window::from_raw(&self.display, event_window);
+                EventKind::MapRequest(event) => {
+                    let window = Window::from_raw(&self.display, event.window);
                     self.map_request(&window);
-                    info!("Mapped window {}", window.as_raw());
-                    self.windows.push(window);
-                },
-                _ => warn!("Event ignored"),
+                    self.windows.insert(window.as_raw(), window);
+                    info!("Mapped window {}", event.window);
+                }
+                EventKind::Unmap(event) => {
+                    if self.windows.contains_key(&event.window) {
+                        self.windows.remove(&event.window);
+                    }
+                    info!("Unmapped window {}", event.window);
+                }
+                EventKind::Configure(event) => {
+                    info!(
+                        "Window {} resized to {}x{}",
+                        event.window, event.width, event.height
+                    );
+                }
+                _ => {
+                    warn!("Event ignored");
+                }
             }
         }
     }

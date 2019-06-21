@@ -4,6 +4,7 @@ use x11::xlib;
 #[derive(Debug)]
 pub struct Window {
     display: XDisplay,
+    bounds: Rect,
     inner: XWindow,
 }
 
@@ -25,6 +26,7 @@ impl Window {
 
         Self {
             display: display.as_raw(),
+            bounds,
             inner: window,
         }
     }
@@ -32,6 +34,7 @@ impl Window {
     pub fn from_raw(display: &Display, window: XWindow) -> Self {
         Self {
             display: display.as_raw(),
+            bounds: Rect::default(),
             inner: window,
         }
     }
@@ -40,13 +43,14 @@ impl Window {
         self.inner
     }
 
-    pub fn move_resize(&self, bounds: Rect) {
+    pub fn move_resize(&mut self, bounds: Rect) {
+        self.bounds = bounds;
         unsafe {
             xlib::XMoveResizeWindow(
                 self.display,
                 self.inner,
-                bounds.x,
-                bounds.y,
+                self.bounds.x,
+                self.bounds.y,
                 bounds.width,
                 bounds.height,
             );
@@ -54,11 +58,11 @@ impl Window {
     }
 }
 
-impl Drop for Window {
-    fn drop(&mut self) {
-        // Destroys (and unmaps) the window
-        unsafe {
-            xlib::XDestroyWindow(self.display, self.inner);
-        }
-    }
-}
+// impl Drop for Window {
+//     fn drop(&mut self) {
+//         // Destroys (and unmaps) the window
+//         unsafe {
+//             xlib::XDestroyWindow(self.display, self.inner);
+//         }
+//     }
+// }

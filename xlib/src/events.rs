@@ -1,52 +1,94 @@
 extern crate libc;
 extern crate x11;
 
-use crate::{XDisplay, XEvent};
-use std::ops::BitOr;
+use crate::XEvent;
 use x11::xlib;
 
+// give them better names? CreateNotify instead of CreateWindow?
 #[derive(Debug, PartialEq)]
-pub enum Events {
-    CreateNotify,
-    DestroyNotify,
-    MapNotify,
-    UnmapNotify,
-    MapRequest,
-    ReparentNotify,
-    ConfigureNotify,
-    ConfigureRequest,
-    Other,
+pub enum EventKind {
+    Any(xlib::XAnyEvent),
+    Button(xlib::XButtonEvent),
+    Circulate(xlib::XCirculateEvent),
+    CirculateRequest(xlib::XCirculateRequestEvent),
+    ClientMessage(xlib::XClientMessageEvent),
+    Colormap(xlib::XColormapEvent),
+    Configure(xlib::XConfigureEvent),
+    ConfigureRequest(xlib::XConfigureRequestEvent),
+    CreateWindow(xlib::XCreateWindowEvent),
+    Crossing(xlib::XCrossingEvent),
+    DestroyWindow(xlib::XDestroyWindowEvent),
+    Error(xlib::XErrorEvent),
+    Expose(xlib::XExposeEvent),
+    FocusChange(xlib::XFocusChangeEvent),
+    GenericEventCookie(xlib::XGenericEventCookie),
+    GraphicsExpose(xlib::XGraphicsExposeEvent),
+    Gravity(xlib::XGravityEvent),
+    Key(xlib::XKeyEvent),
+    Keymap(xlib::XKeymapEvent),
+    Map(xlib::XMapEvent),
+    Mapping(xlib::XMappingEvent),
+    MapRequest(xlib::XMapRequestEvent),
+    Motion(xlib::XMotionEvent),
+    NoExpose(xlib::XNoExposeEvent),
+    Property(xlib::XPropertyEvent),
+    Reparent(xlib::XReparentEvent),
+    ResizeRequest(xlib::XResizeRequestEvent),
+    SelectionClear(xlib::XSelectionClearEvent),
+    Selection(xlib::XSelectionEvent),
+    SelectionRequest(xlib::XSelectionRequestEvent),
+    Unmap(xlib::XUnmapEvent),
+    Visibility(xlib::XVisibilityEvent),
+    None,
+}
+
+fn get_kind(event: XEvent) -> EventKind {
+    unsafe {
+        let kind = event.as_ref().unwrap().get_type();
+        match kind {
+            xlib::KeymapNotify => EventKind::Keymap(event.as_ref().unwrap().keymap),
+            xlib::Expose => EventKind::Expose(event.as_ref().unwrap().expose),
+            xlib::GraphicsExpose => {
+                EventKind::GraphicsExpose(event.as_ref().unwrap().graphics_expose)
+            }
+            xlib::NoExpose => EventKind::NoExpose(event.as_ref().unwrap().no_expose),
+            xlib::VisibilityNotify => EventKind::Visibility(event.as_ref().unwrap().visibility),
+            xlib::CreateNotify => EventKind::CreateWindow(event.as_ref().unwrap().create_window),
+            xlib::DestroyNotify => EventKind::DestroyWindow(event.as_ref().unwrap().destroy_window),
+            xlib::UnmapNotify => EventKind::Unmap(event.as_ref().unwrap().unmap),
+            xlib::MapNotify => EventKind::Map(event.as_ref().unwrap().map),
+            20 => EventKind::MapRequest(event.as_ref().unwrap().map_request),
+            21 => EventKind::Reparent(event.as_ref().unwrap().reparent),
+            22 => EventKind::Configure(event.as_ref().unwrap().configure),
+            23 => EventKind::ConfigureRequest(event.as_ref().unwrap().configure_request),
+            24 => EventKind::Gravity(event.as_ref().unwrap().gravity),
+            25 => EventKind::ResizeRequest(event.as_ref().unwrap().resize_request),
+            26 => EventKind::Circulate(event.as_ref().unwrap().circulate),
+            27 => EventKind::CirculateRequest(event.as_ref().unwrap().circulate_request),
+            28 => EventKind::Property(event.as_ref().unwrap().property),
+            29 => EventKind::SelectionClear(event.as_ref().unwrap().selection_clear),
+            30 => EventKind::SelectionRequest(event.as_ref().unwrap().selection_request),
+            31 => EventKind::Selection(event.as_ref().unwrap().selection),
+            32 => EventKind::Colormap(event.as_ref().unwrap().colormap),
+            33 => EventKind::ClientMessage(event.as_ref().unwrap().client_message),
+            34 => EventKind::Mapping(event.as_ref().unwrap().mapping),
+            _ => EventKind::None,
+        }
+    }
 }
 
 pub struct Event {
     inner: XEvent,
-    kind: Events,
-    display: XDisplay,
-}
-
-fn get_kind(event: i32) -> Events{
-    match event{
-        16 => Events::CreateNotify,
-        17 => Events::DestroyNotify,
-        18 => Events::UnmapNotify,
-        19 => Events::MapNotify,
-        20 => Events::MapRequest,
-        21 => Events::ReparentNotify,
-        22 => Events::ConfigureNotify,
-        23 => Events::ConfigureRequest,
-        _ => Events::Other,
-    }
+    event: EventKind,
 }
 
 impl Event {
-    pub fn from_raw(event: XEvent) -> Self{
-        let fields = unsafe { event.as_ref().unwrap().any };
-        let kind = unsafe { event.as_ref().unwrap().get_type() };
+    pub fn from_raw(event: XEvent) -> Self {
+        let event_kind = get_kind(event);
 
-        Self{
+        Self {
             inner: event,
-            kind: get_kind(kind),
-            display: fields.display,
+            event: event_kind,
         }
     }
 
@@ -54,45 +96,13 @@ impl Event {
         self.inner
     }
 
-    pub fn get_kind(&self) -> &Events {
-        &self.kind
-    }
-
-    pub fn get_display(&self) -> XDisplay{
-        self.display
-    }
-
-    pub fn get_map_event(&self) -> xlib::XMapRequestEvent{
-        unsafe { self.inner.as_ref().unwrap().map_request }   
+    pub fn get_kind(&self) -> &EventKind {
+        &self.event
     }
 }
 
 impl Drop for Event {
     fn drop(&mut self) {
         unsafe { libc::free(self.inner as *mut libc::c_void) };
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum EventMask {
-    KeyPressMask = 0x0000_0001,
-    KeyPressRelease = 0x0000_0002,
-    ButtonPressMask = 0x0000_0004,
-    ButtonReleaseMask = 0x0000_0008,
-    SubstructureNotifyMask = 0x0008_0000,
-    SubstructureRedirectMask = 0x0010_0000,
-}
-
-impl Into<i64> for EventMask {
-    fn into(self) -> i64 {
-        self as i64
-    }
-}
-
-impl BitOr for EventMask {
-    type Output = i64;
-
-    fn bitor(self, rhs: Self) -> Self::Output {
-        self as i64 | rhs as i64
     }
 }

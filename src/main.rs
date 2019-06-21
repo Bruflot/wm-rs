@@ -2,6 +2,7 @@
 extern crate log;
 extern crate pretty_env_logger;
 
+mod server;
 mod wm;
 use wm::WM;
 
@@ -13,5 +14,3 @@ fn main() {
 
     wm.run();
 }
-
-

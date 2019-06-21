@@ -43,6 +43,10 @@ impl Window {
         self.inner
     }
 
+    pub fn get_bounds(&self) -> Rect {
+        self.bounds
+    }
+
     pub fn move_resize(&mut self, bounds: Rect) {
         self.bounds = bounds;
         unsafe {

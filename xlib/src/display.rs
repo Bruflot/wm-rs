@@ -31,6 +31,10 @@ impl Display {
         Window::from_raw(self, window)
     }
 
+    pub fn as_raw(&self) -> XDisplay {
+        self.inner
+    }
+
     // XSync
     pub fn sync<T: Into<i32>>(&self, discard: T) {
         unsafe {
@@ -65,6 +69,24 @@ impl Display {
         }
     }
 
+    // XGrabKey
+    pub fn grab_key(&self, window: &Window, key: u64, modifier: Option<u32>) {
+        let modifier = modifier.unwrap_or(xlib::AnyModifier);
+
+        unsafe {
+            let code = xlib::XKeysymToKeycode(self.inner, key) as i32;
+            xlib::XGrabKey(
+                self.inner,
+                code,
+                modifier,
+                window.as_raw(),
+                0,
+                xlib::GrabModeAsync,
+                xlib::GrabModeAsync,
+            );
+        }
+    }
+
     // XNextEvent
     pub fn next_event(&self) -> Event {
         unsafe {
@@ -72,10 +94,6 @@ impl Display {
             xlib::XNextEvent(self.inner, event);
             Event::from_raw(event)
         }
-    }
-
-    pub fn as_raw(&self) -> XDisplay {
-        self.inner
     }
 }
 

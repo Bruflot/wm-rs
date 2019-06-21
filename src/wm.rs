@@ -1,23 +1,41 @@
+#![allow(dead_code)]
 use std::collections::HashMap;
-use xlib::EventKind;
-use xlib::Rect;
-use xlib::{Display, Event, Window, XResult};
+use xlib::{Display, Event, EventKind, XResult};
+pub use xlib::{Rect, Window};
 
-/// The main structure of the application. It is responsible for opening a
-/// connection to X, fetching the root window, registering events, and setting
-/// up the socket server.
-pub struct WM {
+/// Events that may be transmitted from the WM to the layout module
+pub enum EventNotify {
+    Map,
+    Unmap,
+    Resize,
+}
+
+// &self isn't necessary but might be helpful(?)
+/// The trait that needs to be implemented by the layout module.
+pub trait EventTx {
+    fn notify(&self, vent: EventNotify, window: &mut Window);
+}
+
+/// The main structure of the window manager. It is responsible for connecting
+/// to X, handling incoming events, and calling the functions that are extended
+/// through the `EventTx` trait.
+/// 
+/// This structure is responsible for creating, framing, and mapping any
+/// windows that we manage. Any layout-related events, like resizing and
+/// moving, is handled by the aforementioned layout component.
+pub struct WM<'a, T: EventTx> {
     display: Display,
     root: Window,
     windows: HashMap<u64, Window>,
+    layout: &'a T,
 }
 
-impl WM {
+impl<'a, T: EventTx> WM<'a, T> {
     /// Constructor for the `WM` class.
-    /// Opens a connection to X, fetches the root window, and registers
-    /// that we want to receive events regarding structuring of the root window
-    /// and its children..
-    pub fn new() -> XResult<Self> {
+    /// Creates a new instance of an application. It opens a connection to X,
+    /// fetches the root window, and registers that we want to receive events 
+    /// regarding structuring of the root window and its children.
+    pub fn new(layout: &'a T) -> XResult<Self> {
         let display = Display::connect(None)?;
         let root = display.default_window();
         display.select_input(
@@ -31,27 +49,44 @@ impl WM {
             display,
             root,
             windows: HashMap::new(),
+            layout,
         })
     }
 
     /// Fetches the next event from X. This is a blocking function, and thus
     /// waits until an event is received.
-    pub fn next_event(&mut self) -> Event {
+    fn next_event(&mut self) -> Event {
         self.display.next_event()
     }
 
     /// Adds the window to the our list of managed windows, and maps the window
     /// to the active display.
     /// Triggers a `MapRequest` event.
-    pub fn map_request(&mut self, window: Window) {
+    // * Alternative: self.layout.notify(Event, Window)
+    fn map_request(&mut self, mut window: Window) {
+        // self.layout.map(&window);
+        self.layout.notify(EventNotify::Map, &mut window);
         self.display.map_window(&window);
         info!("Mapped window {}", window.as_raw());
         self.windows.insert(window.as_raw(), window);
     }
 
+    /// Removes the given window from the list of managed windows and sends a
+    /// `Unmap` event. Only triggered if we manage the window.
+    ///
+    /// The `Drop` trait of the `Window` structure will destroy and unmap the
+    /// window automatically.
+    fn unmap_window(&mut self, window: u64) {
+        if self.windows.contains_key(&window) {
+            let mut win = self.windows.remove(&window).unwrap();
+            self.layout.notify(EventNotify::Unmap, &mut win);
+            info!("Unmapped window {}", window);
+        }
+    }
+
     /// Resizes the given window. Triggers a `Resize` event if we manage the
     /// window.
-    pub fn resize_window(&mut self, window: u64) {
+    fn resize_window(&mut self, window: u64) {
         if self.windows.contains_key(&window) {
             let bounds = Rect::default();
             let win = self.windows.get_mut(&window).unwrap();
@@ -60,20 +95,6 @@ impl WM {
                 "Resized window {} to {}x{}",
                 window, bounds.width, bounds.height
             );
-        }
-    }
-
-    /// Removes the given window from the list of managed windows and sends a
-    /// `Unmap` event. Only triggered if we manage the window.
-    ///
-    /// The `Drop` trait of the `window` structure will destroy and unmap the
-    /// window automatically.
-    pub fn unmap_window(&mut self, window: u64) {
-        // Only unmap the window if we manage it
-        if self.windows.contains_key(&window) {
-            self.windows.remove(&window).unwrap();
-            // Server::SendEvent(Event::UnmapWindow, window: Window)
-            info!("Unmapped window {}", window);
         }
     }
 

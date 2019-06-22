@@ -1,4 +1,4 @@
-use crate::wm::{EventNotify, EventTx, Rect, Window};
+use crate::wm::{EventNotify, EventRx, Rect, Window, Display};
 
 pub struct EventHandler;
 
@@ -13,7 +13,13 @@ impl EventHandler {
     }
 }
 
-impl EventTx for EventHandler {
+impl EventRx for EventHandler {
+    // Register any key/button events you may want to receive
+    fn setup(&self, display: &Display, root: &Window){
+        display.grab_button(root, 1, None);
+        display.grab_key(root, 'a', None);
+    }
+
     fn notify(&self, event: EventNotify, window: &mut Window) {
         match event {
             EventNotify::Map => self.map(window),

@@ -8,7 +8,8 @@ use x11::xlib;
 #[derive(Debug, PartialEq)]
 pub enum EventKind {
     Any(xlib::XAnyEvent),
-    Button(xlib::XButtonEvent),
+    ButtonPress(xlib::XButtonEvent),
+    ButtonRelease(xlib::XButtonEvent),
     Circulate(xlib::XCirculateEvent),
     CirculateRequest(xlib::XCirculateRequestEvent),
     ClientMessage(xlib::XClientMessageEvent),
@@ -24,7 +25,8 @@ pub enum EventKind {
     GenericEventCookie(xlib::XGenericEventCookie),
     GraphicsExpose(xlib::XGraphicsExposeEvent),
     Gravity(xlib::XGravityEvent),
-    Key(xlib::XKeyEvent),
+    KeyPress(xlib::XKeyEvent),
+    KeyRelease(xlib::XKeyEvent),
     Keymap(xlib::XKeymapEvent),
     Map(xlib::XMapEvent),
     Mapping(xlib::XMappingEvent),
@@ -46,30 +48,35 @@ fn get_kind(event: XEvent) -> EventKind {
     unsafe {
         let kind = event.as_ref().unwrap().get_type();
         match kind {
-            xlib::KeymapNotify => EventKind::Keymap(event.as_ref().unwrap().keymap),
-            xlib::Expose => EventKind::Expose(event.as_ref().unwrap().expose),
-            xlib::GraphicsExpose => {
-                EventKind::GraphicsExpose(event.as_ref().unwrap().graphics_expose)
-            }
-            xlib::NoExpose => EventKind::NoExpose(event.as_ref().unwrap().no_expose),
-            xlib::VisibilityNotify => EventKind::Visibility(event.as_ref().unwrap().visibility),
-            xlib::CreateNotify => EventKind::CreateWindow(event.as_ref().unwrap().create_window),
-            xlib::DestroyNotify => EventKind::DestroyWindow(event.as_ref().unwrap().destroy_window),
-            xlib::UnmapNotify => EventKind::Unmap(event.as_ref().unwrap().unmap),
-            xlib::MapNotify => EventKind::Map(event.as_ref().unwrap().map),
-            xlib::MapRequest => EventKind::MapRequest(event.as_ref().unwrap().map_request),
-            xlib::ReparentNotify => EventKind::Reparent(event.as_ref().unwrap().reparent),
-            xlib::ConfigureNotify => EventKind::Configure(event.as_ref().unwrap().configure),
-            xlib::ConfigureRequest => {
-                EventKind::ConfigureRequest(event.as_ref().unwrap().configure_request)
-            }
-            xlib::GravityNotify => EventKind::Gravity(event.as_ref().unwrap().gravity),
-            xlib::ResizeRequest => EventKind::ResizeRequest(event.as_ref().unwrap().resize_request),
+            xlib::ButtonPress => EventKind::ButtonPress(event.as_ref().unwrap().button), 
+            xlib::ButtonRelease => EventKind::ButtonRelease(event.as_ref().unwrap().button),
             xlib::CirculateNotify => EventKind::Circulate(event.as_ref().unwrap().circulate),
             xlib::CirculateRequest => {
                 EventKind::CirculateRequest(event.as_ref().unwrap().circulate_request)
             }
+            xlib::ClientMessage => EventKind::ClientMessage(event.as_ref().unwrap().client_message),
+            xlib::ConfigureNotify => EventKind::Configure(event.as_ref().unwrap().configure),
+            xlib::ConfigureRequest => {
+                EventKind::ConfigureRequest(event.as_ref().unwrap().configure_request)
+            }
+            xlib::ColormapNotify => EventKind::Colormap(event.as_ref().unwrap().colormap),
+            xlib::CreateNotify => EventKind::CreateWindow(event.as_ref().unwrap().create_window),
+            xlib::DestroyNotify => EventKind::DestroyWindow(event.as_ref().unwrap().destroy_window),
+            xlib::Expose => EventKind::Expose(event.as_ref().unwrap().expose),
+            xlib::GraphicsExpose => {
+                EventKind::GraphicsExpose(event.as_ref().unwrap().graphics_expose)
+            }
+            xlib::GravityNotify => EventKind::Gravity(event.as_ref().unwrap().gravity),
+            xlib::KeymapNotify => EventKind::Keymap(event.as_ref().unwrap().keymap),
+            xlib::KeyPress => EventKind::KeyPress(event.as_ref().unwrap().key),
+            xlib::KeyRelease => EventKind::KeyRelease(event.as_ref().unwrap().key),
+            xlib::MapNotify => EventKind::Map(event.as_ref().unwrap().map),
+            xlib::MappingNotify => EventKind::Mapping(event.as_ref().unwrap().mapping),
+            xlib::MapRequest => EventKind::MapRequest(event.as_ref().unwrap().map_request),
+            xlib::NoExpose => EventKind::NoExpose(event.as_ref().unwrap().no_expose),
             xlib::PropertyNotify => EventKind::Property(event.as_ref().unwrap().property),
+            xlib::ResizeRequest => EventKind::ResizeRequest(event.as_ref().unwrap().resize_request),
+            xlib::ReparentNotify => EventKind::Reparent(event.as_ref().unwrap().reparent),
             xlib::SelectionClear => {
                 EventKind::SelectionClear(event.as_ref().unwrap().selection_clear)
             }
@@ -77,9 +84,8 @@ fn get_kind(event: XEvent) -> EventKind {
                 EventKind::SelectionRequest(event.as_ref().unwrap().selection_request)
             }
             xlib::SelectionNotify => EventKind::Selection(event.as_ref().unwrap().selection),
-            xlib::ColormapNotify => EventKind::Colormap(event.as_ref().unwrap().colormap),
-            xlib::ClientMessage => EventKind::ClientMessage(event.as_ref().unwrap().client_message),
-            xlib::MappingNotify => EventKind::Mapping(event.as_ref().unwrap().mapping),
+            xlib::VisibilityNotify => EventKind::Visibility(event.as_ref().unwrap().visibility),
+            xlib::UnmapNotify => EventKind::Unmap(event.as_ref().unwrap().unmap),
             _ => EventKind::Other,
         }
     }

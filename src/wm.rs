@@ -1,19 +1,23 @@
 #![allow(dead_code)]
 use std::collections::HashMap;
-use xlib::{Display, Event, EventKind, XResult};
-pub use xlib::{Rect, Window};
+use xlib::{Event, EventKind, XResult};
+pub use xlib::{Display, Rect, Window};
 
-/// Events that may be transmitted from the WM to the layout module
+/// Events that may be transmitted from the WM to the layout handler.
 pub enum EventNotify {
+    ButtonPress(u32),
+    ButtonRelease(u32),
     Map,
     Unmap,
     Resize,
 }
 
-// &self isn't necessary but might be helpful(?)
 /// The trait that needs to be implemented by the layout module.
-pub trait EventTx {
-    fn notify(&self, vent: EventNotify, window: &mut Window);
+pub trait EventRx {
+    // ? init?
+    // ? &self isn't necessary but might be helpful(?)
+    fn setup(&self, display: &Display, root: &Window);
+    fn notify(&self, event: EventNotify, window: &mut Window);
 }
 
 /// The main structure of the window manager. It is responsible for connecting
@@ -23,14 +27,14 @@ pub trait EventTx {
 /// This structure is responsible for creating, framing, and mapping any
 /// windows that we manage. Any layout-related events, like resizing and
 /// moving, is handled by the aforementioned layout component.
-pub struct WM<'a, T: EventTx> {
+pub struct WM<'a, T: EventRx> {
     display: Display,
     root: Window,
     windows: HashMap<u64, Window>,
     layout: &'a T,
 }
 
-impl<'a, T: EventTx> WM<'a, T> {
+impl<'a, T: EventRx> WM<'a, T> {
     /// Constructor for the `WM` class.
     /// Creates a new instance of an application. It opens a connection to X,
     /// fetches the root window, and registers that we want to receive events 
@@ -44,6 +48,8 @@ impl<'a, T: EventTx> WM<'a, T> {
                 | xlib::SUBSTRUCTURE_REDIRECT_MASK
                 | xlib::STRUCTURE_NOTIFY_MASK,
         );
+        
+        layout.setup(&display, &root);
 
         Ok(Self {
             display,
@@ -61,50 +67,42 @@ impl<'a, T: EventTx> WM<'a, T> {
 
     /// Adds the window to the our list of managed windows, and maps the window
     /// to the active display.
-    /// Triggers a `MapRequest` event.
+    /// Triggers a call to `EventRx::notify` with `EventNotify::Map`..
     // * Alternative: self.layout.notify(Event, Window)
     fn map_request(&mut self, mut window: Window) {
-        // self.layout.map(&window);
         self.layout.notify(EventNotify::Map, &mut window);
         self.display.map_window(&window);
         info!("Mapped window {}", window.as_raw());
         self.windows.insert(window.as_raw(), window);
     }
 
-    /// Removes the given window from the list of managed windows and sends a
-    /// `Unmap` event. Only triggered if we manage the window.
-    ///
-    /// The `Drop` trait of the `Window` structure will destroy and unmap the
-    /// window automatically.
+    /// Removes the given window from the list of managed windows and calls
+    /// `EventRx::notify` with `EventNotify::Unmap`.
     fn unmap_window(&mut self, window: u64) {
         if self.windows.contains_key(&window) {
             let mut win = self.windows.remove(&window).unwrap();
             self.layout.notify(EventNotify::Unmap, &mut win);
             info!("Unmapped window {}", window);
+            drop(win);
         }
     }
 
-    /// Resizes the given window. Triggers a `Resize` event if we manage the
-    /// window.
-    fn resize_window(&mut self, window: u64) {
-        if self.windows.contains_key(&window) {
-            let bounds = Rect::default();
-            let win = self.windows.get_mut(&window).unwrap();
-            win.move_resize(bounds);
-            info!(
-                "Resized window {} to {}x{}",
-                window, bounds.width, bounds.height
-            );
+    // ? notify_mut and notify?
+    fn button_press(&mut self, window: u64, button: u32){
+        if self.windows.contains_key(&window){
+            let mut window = self.windows.get_mut(&window).unwrap();
+            self.layout.notify(EventNotify::ButtonPress(button), &mut window);
         }
+        debug!("Button {} pressed on window {}", button, window);
     }
 
     /// The main loop that handles all incoming events from X, and calls
-    /// the relevant class function.
+    /// the relevant trait function.
     pub fn run(&mut self) {
         loop {
             let event = self.next_event();
             let kind = event.get_kind();
-            info!("Event received: {:?}", kind);
+            debug!("Event received: {:?}", kind);
 
             match kind {
                 EventKind::MapRequest(event) => {
@@ -119,6 +117,12 @@ impl<'a, T: EventTx> WM<'a, T> {
                         "Window {} resized to {}x{}",
                         event.window, event.width, event.height
                     );
+                }
+                EventKind::ButtonPress(event) => {
+                    self.button_press(event.subwindow, event.button);
+                }
+                EventKind::KeyPress(event) => {
+                    self.button_press(event.subwindow, event.keycode);
                 }
                 _ => {
                     warn!("Event ignored");

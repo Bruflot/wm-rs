@@ -69,12 +69,32 @@ impl Display {
         }
     }
 
-    // XGrabKey
-    pub fn grab_key(&self, window: &Window, key: u64, modifier: Option<u32>) {
+    // XGrabButton
+    pub fn grab_button(&self, window: &Window, button: u32, modifier: Option<u32>) {
         let modifier = modifier.unwrap_or(xlib::AnyModifier);
 
         unsafe {
-            let code = xlib::XKeysymToKeycode(self.inner, key) as i32;
+            xlib::XGrabButton(
+                self.inner,
+                button,
+                modifier,
+                window.as_raw(),
+                0,
+                (xlib::ButtonPressMask | xlib::ButtonReleaseMask | xlib::ButtonMotionMask) as u32,
+                xlib::GrabModeAsync,
+                xlib::GrabModeAsync,
+                0,
+                0,
+            );
+        }
+    }
+
+    // XGrabKey
+    pub fn grab_key(&self, window: &Window, key: char, modifier: Option<u32>) {
+        let modifier = modifier.unwrap_or(xlib::AnyModifier);
+
+        unsafe {
+            let code = xlib::XKeysymToKeycode(self.inner, key as u64) as i32;
             xlib::XGrabKey(
                 self.inner,
                 code,

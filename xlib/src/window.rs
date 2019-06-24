@@ -5,15 +5,15 @@ use x11::xlib;
 pub struct Window {
     display: XDisplay,
     bounds: Rect,
-    inner: XWindow,
+    _inner: XWindow,
 }
 
 impl Window {
-    pub fn new(display: &Display, bounds: Rect) -> Self {
+    pub fn new(display: Display, bounds: Rect) -> Self {
         let window = unsafe {
             xlib::XCreateSimpleWindow(
                 display.as_raw(),
-                display.default_window().inner,
+                display.default_window()._inner,
                 bounds.x,
                 bounds.y,
                 bounds.width,
@@ -27,7 +27,7 @@ impl Window {
         Self {
             display: display.as_raw(),
             bounds,
-            inner: window,
+            _inner: window,
         }
     }
 
@@ -35,12 +35,12 @@ impl Window {
         Self {
             display: display.as_raw(),
             bounds: Rect::default(),
-            inner: window,
+            _inner: window,
         }
     }
 
     pub fn as_raw(&self) -> XWindow {
-        self.inner
+        self._inner
     }
 
     pub fn get_bounds(&self) -> Rect {
@@ -52,11 +52,11 @@ impl Window {
         unsafe {
             xlib::XMoveResizeWindow(
                 self.display,
-                self.inner,
+                self._inner,
                 self.bounds.x,
                 self.bounds.y,
-                bounds.width,
-                bounds.height,
+                self.bounds.width,
+                self.bounds.height,
             );
         }
     }

@@ -107,6 +107,42 @@ impl Display {
         }
     }
 
+    // XWarpPointer
+    pub fn warp_pointer(
+        &self,
+        src_window: Option<&Window>,
+        dest_window: Option<&Window>,
+        src_x: i32,
+        src_y: i32,
+        src_width: u32,
+        src_height: u32,
+        dest_x: i32,
+        dest_y: i32,
+    ) {
+        let src_window = match src_window {
+            Some(w) => w.as_raw(),
+            None => 0,
+        };
+        let dest_window = match dest_window {
+            Some(w) => w.as_raw(),
+            None => 0,
+        };
+
+        unsafe {
+            xlib::XWarpPointer(
+                self.inner,
+                src_window,
+                dest_window,
+                src_x,
+                src_y,
+                src_width,
+                src_height,
+                dest_x,
+                dest_y,
+            );
+        }
+    }
+
     // XNextEvent
     pub fn next_event(&self) -> Event {
         unsafe {

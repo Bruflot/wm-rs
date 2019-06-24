@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use std::collections::HashMap;
-use xlib::{Event, EventKind, XResult};
 pub use xlib::{Display, Rect, Window};
+use xlib::{Event, EventKind, XResult};
 
 /// Events that may be transmitted from the WM to the layout handler.
 pub enum EventNotify {
@@ -23,7 +23,7 @@ pub trait EventRx {
 /// The main structure of the window manager. It is responsible for connecting
 /// to X, handling incoming events, and calling the functions that are extended
 /// through the `EventTx` trait.
-/// 
+///
 /// This structure is responsible for creating, framing, and mapping any
 /// windows that we manage. Any layout-related events, like resizing and
 /// moving, is handled by the aforementioned layout component.
@@ -37,7 +37,7 @@ pub struct WM<'a, T: EventRx> {
 impl<'a, T: EventRx> WM<'a, T> {
     /// Constructor for the `WM` class.
     /// Creates a new instance of an application. It opens a connection to X,
-    /// fetches the root window, and registers that we want to receive events 
+    /// fetches the root window, and registers that we want to receive events
     /// regarding structuring of the root window and its children.
     pub fn new(layout: &'a T) -> XResult<Self> {
         let display = Display::connect(None)?;
@@ -48,7 +48,7 @@ impl<'a, T: EventRx> WM<'a, T> {
                 | xlib::SUBSTRUCTURE_REDIRECT_MASK
                 | xlib::STRUCTURE_NOTIFY_MASK,
         );
-        
+
         layout.setup(&display, &root);
 
         Ok(Self {
@@ -88,10 +88,11 @@ impl<'a, T: EventRx> WM<'a, T> {
     }
 
     // ? notify_mut and notify?
-    fn button_press(&mut self, window: u64, button: u32){
-        if self.windows.contains_key(&window){
+    fn button_press(&mut self, window: u64, button: u32) {
+        if self.windows.contains_key(&window) {
             let mut window = self.windows.get_mut(&window).unwrap();
-            self.layout.notify(EventNotify::ButtonPress(button), &mut window);
+            self.layout
+                .notify(EventNotify::ButtonPress(button), &mut window);
         }
         debug!("Button {} pressed on window {}", button, window);
     }
@@ -113,7 +114,7 @@ impl<'a, T: EventRx> WM<'a, T> {
                     self.unmap_window(event.window);
                 }
                 EventKind::Configure(event) => {
-                    info!(
+                    debug!(
                         "Window {} resized to {}x{}",
                         event.window, event.width, event.height
                     );

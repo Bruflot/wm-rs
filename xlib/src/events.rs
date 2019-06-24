@@ -48,7 +48,7 @@ fn get_kind(event: XEvent) -> EventKind {
     unsafe {
         let kind = event.as_ref().unwrap().get_type();
         match kind {
-            xlib::ButtonPress => EventKind::ButtonPress(event.as_ref().unwrap().button), 
+            xlib::ButtonPress => EventKind::ButtonPress(event.as_ref().unwrap().button),
             xlib::ButtonRelease => EventKind::ButtonRelease(event.as_ref().unwrap().button),
             xlib::CirculateNotify => EventKind::Circulate(event.as_ref().unwrap().circulate),
             xlib::CirculateRequest => {
@@ -92,8 +92,8 @@ fn get_kind(event: XEvent) -> EventKind {
 }
 
 pub struct Event {
-    inner: XEvent,
     event: EventKind,
+    _inner: XEvent,
 }
 
 impl Event {
@@ -101,13 +101,13 @@ impl Event {
         let event_kind = get_kind(event);
 
         Self {
-            inner: event,
+            _inner: event,
             event: event_kind,
         }
     }
 
     pub fn as_raw(&self) -> XEvent {
-        self.inner
+        self._inner
     }
 
     pub fn get_kind(&self) -> &EventKind {
@@ -117,6 +117,6 @@ impl Event {
 
 impl Drop for Event {
     fn drop(&mut self) {
-        unsafe { libc::free(self.inner as *mut libc::c_void) };
+        unsafe { libc::free(self._inner as *mut libc::c_void) };
     }
 }
